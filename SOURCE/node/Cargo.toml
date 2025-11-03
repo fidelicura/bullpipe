@@ -1,0 +1,50 @@
+[package]
+edition = "2024"
+license = "Apache-2.0"
+name = "raftor"
+version = "1.0.0"
+
+[dependencies]
+embassy-executor = "0.9"
+embassy-futures = { version = "0.1", features = ["log"] }
+embassy-net = { version = "0.7", features = ["dhcpv4", "medium-ethernet", "udp"] }
+embassy-sync = "0.7"
+embassy-time = "0.5"
+esp-alloc = "0.9"
+esp-backtrace = { version = "0.18", features = ["esp32c3", "panic-handler", "println"] }
+esp-bootloader-esp-idf = { version = "0.4", features = ["esp32c3", "log-04"] }
+esp-hal = { version = "1.0", features = ["unstable", "esp32c3", "log-04"] }
+esp-println = { version = "0.16", features = ["esp32c3", "log-04"] }
+esp-radio = { version = "0.17.0", features = ["unstable", "esp32c3", "esp-alloc", "log-04", "esp-now", "wifi"] }
+esp-rtos = { version = "0.2", features = ["esp32c3", "esp-alloc", "esp-radio", "log-04", "embassy"] }
+heapless = "0.9"
+log = "0.4"
+postcard = "1.0"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+static_cell = "2.1"
+
+[lints.rust]
+unsafe_code = "forbid"
+trivial_casts = "forbid"
+trivial_numeric_casts = "forbid"
+unused_import_braces = "forbid"
+unused_results = "forbid"
+
+[lints.clippy]
+all = "forbid"
+pedantic = "forbid"
+nursery = "forbid"
+unwrap_used = "forbid"
+panic = "forbid"
+todo = "forbid"
+
+[profile.dev]
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1
+debug-assertions = false
+incremental = false
+lto = "fat"
+opt-level = "s"
+overflow-checks = false

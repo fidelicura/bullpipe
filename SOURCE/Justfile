@@ -1,0 +1,98 @@
+SELF := just_executable()
+
+set quiet
+
+[group("general")]
+[private]
+default:
+    {{SELF}} --list --unsorted --no-aliases
+
+alias a := all
+[doc("`a`: execute all project steps in order")]
+[group("general")]
+all PROFILE="release" LEVEL="info":
+    #!/usr/bin/bash
+    {{SELF}} node-all {{PROFILE}} {{LEVEL}} &&
+    {{SELF}} broker-all {{PROFILE}} {{LEVEL}}
+
+######################################################################
+# node
+######################################################################
+
+alias nl := node-lint
+[group("node")]
+[doc("`nl`: lint node project source code")]
+node-lint PROFILE="release":
+    #!/usr/bin/bash
+    pushd node &> /dev/null
+    cargo check --profile={{PROFILE}}
+    cargo clippy --profile={{PROFILE}}
+    popd &> /dev/null
+
+alias nb := node-build
+[group("node")]
+[doc("`nb`: build node project source code")]
+node-build PROFILE="release":
+    #!/usr/bin/bash
+    pushd node &> /dev/null
+    cargo build --profile={{PROFILE}}
+    popd &> /dev/null
+
+alias nr := node-run
+[group("node")]
+[doc("`nr`: run node project built executable")]
+node-run PROFILE="release" LEVEL="info":
+    #!/usr/bin/bash
+    pushd node &> /dev/null
+    ESP_LOG="{{LEVEL}}" cargo run --profile={{PROFILE}}
+    popd &> /dev/null
+
+alias na := node-all
+[group("node")]
+[doc("`na`: execute all node project steps in order")]
+node-all PROFILE="release" LEVEL="info":
+    #!/usr/bin/bash
+    {{SELF}} node-lint {{PROFILE}} &&
+    {{SELF}} node-build {{PROFILE}} &&
+    {{SELF}} node-run {{PROFILE}} {{LEVEL}}
+
+######################################################################
+# broker
+######################################################################
+
+alias bl := broker-lint
+[group("broker")]
+[doc("`bl`: lint broker project source code")]
+broker-lint PROFILE="release":
+    #!/usr/bin/bash
+    pushd broker &> /dev/null
+    cargo check --profile={{PROFILE}}
+    cargo clippy --profile={{PROFILE}}
+    popd &> /dev/null
+
+alias bb := broker-build
+[group("broker")]
+[doc("`bb`: build broker project source code")]
+broker-build PROFILE="release":
+    #!/usr/bin/bash
+    pushd broker &> /dev/null
+    cargo build --profile={{PROFILE}}
+    popd &> /dev/null
+
+alias br := broker-run
+[group("broker")]
+[doc("`br`: run broker project built executable")]
+broker-run PROFILE="release" LEVEL="info":
+    #!/usr/bin/bash
+    pushd broker &> /dev/null
+    ESP_LOG="{{LEVEL}}" cargo run --profile={{PROFILE}}
+    popd &> /dev/null
+
+alias ba := broker-all
+[group("broker")]
+[doc("`ba`: execute all broker project steps in order")]
+broker-all PROFILE="release" LEVEL="info":
+    #!/usr/bin/bash
+    {{SELF}} broker-lint {{PROFILE}} &&
+    {{SELF}} broker-build {{PROFILE}} &&
+    {{SELF}} broker-run {{PROFILE}} {{LEVEL}}

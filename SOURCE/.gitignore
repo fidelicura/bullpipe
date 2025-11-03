@@ -1,0 +1,17 @@
+# cargo
+debug/
+target/
+Cargo.lock
+
+# editors
+.vscode/
+.zed/
+.helix/
+.vim/
+.nvim.lua
+
+# rustfmt
+**/*.rs.bk
+
+# misc
+repository.dump

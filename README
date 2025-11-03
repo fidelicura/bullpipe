@@ -1,0 +1,136 @@
+DESCRIPTION
+
+	A [Bully] leader election algorithm implementation for [ESP32-C3] microcontrollers
+	family written in [Rust]. This project shows distributed leader election
+	across multiple [ESP32-C3]FN4 boards using the [Bully] protocol.
+
+	With recommended minimum of 3 boards, each of them participates in the
+	election process and uses a single LED indicator on GPIO port #4 to
+	visually display its current state in the cluster:
+
+		* Leader: steady on
+		* Candidate: quick blink.
+		* Follower: slow blink.
+		* Isolated: steady off.
+
+	Communication between nodes is handled via [ESP-NOW], a connectionless
+	protocol that leverages the [ESP32-C3]'s built-in WiFi capabilities for
+	fast, low-power peer-to-peer messaging without requiring a router or
+	access point.
+
+	This serves as both a practical example of implementing [Bully] on
+	resource-constrained embedded systems and a visual demonstration of
+	distributed leader election in action. Multiple boards can be networked
+	together to form a cluster where leadership automatically transitions
+	if the current leader fails.
+
+ARCHITECTURE
+
+	Initially, [Raft] algorithm was chosen, but [Bully] took over because
+	[ESP32-C3]FN4 boards, when placed in close proximity, exhibit significant
+	packet loss. The [Bully] algorithm amortizes this by using static leadership
+	distribution based on unique node IDs (MAC addresses), where the highest ID
+	always wins - no majority vote required.
+
+	The number of nodes in the cluster is dynamic: boards can join or leave
+	at any time without prior configuration. New peers are discovered
+	automatically when their first [ESP-NOW] packet arrives, and a missing
+	leader is detected by heartbeat timeout (2 seconds), triggering a new
+	election.
+
+	The node firmware (`SOURCE/node/`) runs on [Embassy] async runtime and
+	is organized as a set of concurrent tasks:
+
+		* Hermes: receives [ESP-NOW] packets, deserializes messages
+		  and registers unknown peers on the fly.
+
+		* Governor: drives the [Bully] state machine - tracks
+		  timeouts, processes election/heartbeat/victory messages
+		  and performs role transitions.
+
+		* Prometheus: maps current role to LED blink pattern.
+
+		* Publisher: broadcasts node state as JSON over UDP every
+		  330 ms for external monitoring.
+
+		* Connector: maintains WiFi connection for the UDP path.
+
+		* Runner: runs the [Embassy] network stack.
+
+	The wire protocol (`SOURCE/node/src/wire.rs`) defines three request
+	types and their corresponding responses, serialized with [postcard]
+	into compact binary frames (up to 250 bytes per [ESP-NOW] payload).
+	Every message is broadcast to all peers simultaneously:
+
+		* Heartbeat: sent by the leader every 500 ms. A receiver
+		  with a higher ID responds with an Election veto and becomes
+		  a candidate; a receiver with a lower ID accepts the sender
+		  as leader and resets its timeout.
+
+		* Election: announces candidacy. Any node with a higher ID
+		  responds with a veto, forcing the candidate back to the
+		  initialization phase.
+
+		* Victory: sent once after a candidate survives its waiting
+		  period (500 ms + random jitter up to 200 ms) without
+		  receiving a veto. All lower-ID nodes become followers
+		  of the new leader.
+
+	The monitoring broker (`SOURCE/broker/`) is a host-side TUI application
+	built with [ratatui]. It listens on UDP port 9999 for node broadcasts
+	and displays a live table of all nodes, their roles and last-seen
+	timestamps. Nodes silent for over 2 seconds are marked as dead.
+
+LICENSING
+
+	This project is licensed under [Apache-2.0].
+	See the license file at `LICENSE`.
+
+USAGE
+
+	> Following commands were tested on [Ubuntu] 25.10 [Linux].
+
+	1) Install [rustup]:
+
+		$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+	2) Build [bullpipe]:
+
+		$ cargo build --release
+
+	3) Install [espflash]:
+
+		$ cargo install --locked espflash@=4.2
+
+	4) Flash [bullpipe]:
+
+		$ cargo run --release
+
+CONTRIBUTING
+
+	> Following commands were tested on [Ubuntu] 25.10 [Linux].
+
+	1) Follow steps in %USAGE% section.
+
+	2) Install [rust-analyzer] and [clippy]:
+
+		$ rustup component add rust-analyzer clippy
+
+APPENDIX
+
+	[ESP-C3]: <https://www.espressif.com/en/products/socs/esp32-c3/>.
+	[Rust]: <https://www.rust-lang.org/>.
+	[Bully]: <https://en.wikipedia.org/wiki/Bully_algorithm>.
+	[Raft]: <https://raft.github.io/>.
+	[ESP-NOW]: <https://www.espressif.com/en/solutions/low-power-solutions/esp-now/>.
+	[Embassy]: <https://embassy.dev/>.
+	[postcard]: <https://docs.rs/postcard/>.
+	[ratatui]: <https://ratatui.rs/>.
+	[Apache-2.0]: <https://www.apache.org/licenses/LICENSE-2.0>.
+	[Ubuntu]: <https://www.ubuntu.com/>.
+	[Linux]: <https://www.kernel.org/>.
+	[rustup]: <https://www.rustup.rs/>.
+	[bullpipe]: <https://www.github.com/fidelicura/bullpipe/>.
+	[espflash]: <https://github.com/esp-rs/espflash/>.
+	[rust-analyzer]: <https://rust-analyzer.github.io/>.
+	[clippy]: <https://github.com/rust-lang/rust-clippy/>.
