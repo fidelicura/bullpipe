@@ -1,0 +1,70 @@
+set quiet
+
+BAUD := "115200"
+BIN := DIR + "/bin/raftor.bin"
+CHIP := "esp32c3"
+DIR := "build"
+ELF := DIR + "/bin/raftor.elf"
+JUST := just_executable()
+PORT := "/dev/ttyACM0"
+
+[private]
+default:
+	{{JUST}} --list --unsorted --no-aliases
+
+[doc("clean project")]
+clean:
+    rm -rf sdkconfig* build/ zig-out/
+
+[doc("setup project")]
+setup:
+    idf.py set-target esp32c3
+    idf.py build
+
+[doc("build project")]
+build *ARGS:
+    zig build \
+        {{ARGS}} \
+        --prefix build \
+        -Doptimize=ReleaseSmall
+
+[doc("convert executable")]
+convert PORT=PORT BAUD=BAUD:
+    esptool.py \
+        --chip={{CHIP}} \
+        --port={{PORT}} \
+        --baud={{BAUD}} \
+        elf2image \
+        --flash_mode=dio \
+        --flash_freq=80m \
+        --flash_size=4MB \
+        --output={{BIN}} \
+        {{ELF}}
+    echo "Saved to '{{BIN}}'."
+
+[doc("flash image")]
+flash PORT=PORT BAUD=BAUD:
+    esptool.py \
+        --chip={{CHIP}} \
+        --port={{PORT}} \
+        --baud={{BAUD}} \
+        --before=default_reset \
+        --after=hard_reset \
+        write_flash \
+        --compress \
+        --verify \
+        0x0 {{DIR}}/bootloader/bootloader.bin \
+        0x8000 {{DIR}}/partition_table/partition-table.bin \
+        0x10000 {{BIN}}
+
+[doc("monitor project")]
+monitor PORT=PORT BAUD=BAUD:
+    idf.py \
+        monitor \
+        --port={{PORT}} \
+        --monitor-baud={{BAUD}} \
+        --timestamps
+
+[doc("all in one")]
+[confirm("is chip currently in download mode?")]
+all: clean setup build convert flash monitor

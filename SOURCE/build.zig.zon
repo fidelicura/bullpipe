@@ -1,0 +1,14 @@
+.{
+    .name = .raftor,
+    .version = "0.0.0",
+    .fingerprint = 0x42a15cbf6711bb12,
+    .minimum_zig_version = "0.15.2",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "main",
+        "CMakeLists.txt",
+        "../LICENSE",
+        "../README",
+    },
+}

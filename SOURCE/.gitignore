@@ -1,0 +1,11 @@
+# zig
+.zig-cache/
+zig-out/
+*.o
+
+# idf
+build/
+sdkconfig*
+
+# misc
+repository.dump

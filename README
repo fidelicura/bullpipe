@@ -1,0 +1,47 @@
+DESCRIPTION
+
+	A Raft consensus algorithm implementation for [ESP-C3] microcontrollers family
+	(specifically, ESP32-C3FN4) written in [Zig]. This project shows distributed
+	leader election across multiple [ESP-C3] boards using the [Raft] protocol.
+
+	Each board participates in the voting process and uses a single LED indicator
+	to visually display its current state in the cluster:
+
+		* Follower: slow blinking.
+		* Candidate: quick blinking.
+		* Leader: static lightning.
+		* Invalid: no lightning.
+
+	Communication between nodes is handled via [ESP-NOW], a connectionless
+	protocol that leverages the [ESP32-C3]'s built-in WiFi capabilities for
+	fast, low-power peer-to-peer messaging without requiring a router or
+	access point.
+
+	This serves as both a practical example of implementing [Raft] on
+	resource-constrained embedded systems and a visual demonstration of
+	distributed consensus in action. Multiple boards can be networked
+	together to form a fault-tolerant cluster where leadership automatically
+	transitions if the current leader fails.
+
+	This project has no external dependencies beyond [ESP-NOW]. The [Raft]
+	implementation and all supporting code are written from scratch in [Zig]
+	without relying on third-party libraries or packages.
+
+REQUIREMENTS
+
+	* [Zig] (`0.15`).
+	* [CMake] (`3.31`).
+	* [GAS] (`2.45`).
+	* [LD] (`2.45`).
+	* [IDF] (`5.5`).
+
+APPENDIX
+
+	[ESP-C3]: <https://www.espressif.com/en/products/socs/esp32-c3/>.
+	[Zig]: <https://www.ziglang.org/>.
+	[Raft]: <https://raft.github.io/>.
+	[ESP-NOW]: <https://www.espressif.com/en/solutions/low-power-solutions/esp-now/>.
+	[CMake]: <https://www.cmake.org/>.
+	[GAS]: <https://www.gnu.org/software/binutils/>.
+	[LD]: <https://www.gnu.org/software/binutils/>.
+	[IDF]: <https://www.github.com/espressif/esp-idf/>.
